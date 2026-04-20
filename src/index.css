@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sidebar-w: 230px;
+  --bg: #0f0f13;
+  --surface: #17171e;
+  --surface2: #1e1e28;
+  --border: #2a2a38;
+  --accent: #7c5cfc;
+  --accent-glow: rgba(124, 92, 252, 0.25);
+  --accent-hover: #9b7dff;
+  --green: #22c55e;
+  --red: #ef4444;
+  --text: #c4c4d4;
+  --text-muted: #6b6b80;
+  --text-head: #f0f0fa;
+  --radius: 10px;
+  --font: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  text-align: left;
+  border: none;
+  max-width: 100%;
+  margin: 0;
+}
