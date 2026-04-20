@@ -4,6 +4,7 @@ import PostsPage from './pages/PostsPage';
 import PostDetailPage from './pages/PostDetailPage';
 import GuidelinesPage from './pages/GuidelinesPage';
 import BrandAssetsPage from './pages/BrandAssetsPage';
+import { ServerWakeProvider } from './context/ServerWakeContext';
 import './App.css';
 
 function Sidebar() {
@@ -33,6 +34,7 @@ function Sidebar() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ServerWakeProvider>
       <div className="layout">
         <Sidebar />
         <div className="main-content">
@@ -46,6 +48,7 @@ export default function App() {
           </Routes>
         </div>
       </div>
+      </ServerWakeProvider>
     </BrowserRouter>
   );
 }

@@ -49,6 +49,19 @@ export const updateDocument = (id: string, data: { title?: string; content?: str
 export const deleteDocument = (id: string) =>
   request<{ success: boolean }>(`/api/documents/${id}`, { method: 'DELETE' });
 
+// Server health ping — resolves when server is up (retries until success)
+export async function pingUntilAlive(): Promise<void> {
+  while (true) {
+    try {
+      const res = await fetch(`${BASE}/api/posts`, { method: 'HEAD' });
+      if (res.ok || res.status === 405) return; // 405 = server alive but HEAD not allowed
+    } catch {
+      // server still sleeping
+    }
+    await new Promise(r => setTimeout(r, 3000));
+  }
+}
+
 // Generate
 export const generatePost = (data: GenerateRequest) =>
   request<GenerateResponse>('/api/generate', { method: 'POST', body: JSON.stringify(data) });
