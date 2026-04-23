@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { generatePost, refinePost, savePost, getPostsCount, getDocuments } from '../lib/api';
 import type { GenerateResponse, Document } from '../types';
 import RichEditor from '../components/RichEditor';
 import { markdownToHtml } from '../lib/markdown';
+import { isLimitReached, incrementUsage, getLimitMessage } from '../lib/dailyLimit';
 
 function normalize(res: GenerateResponse): GenerateResponse {
   return { ...res, content: markdownToHtml(res.content) };
@@ -11,7 +12,8 @@ function normalize(res: GenerateResponse): GenerateResponse {
 
 export default function GeneratePage() {
   const navigate = useNavigate();
-  const [title, setTitle] = useState('');
+  const [searchParams] = useSearchParams();
+  const [title, setTitle] = useState(searchParams.get('title') ?? '');
   const [notes, setNotes] = useState('');
   const [recentPostsLimit, setRecentPostsLimit] = useState(3);
   const [maxPosts, setMaxPosts] = useState(0);
@@ -23,6 +25,7 @@ export default function GeneratePage() {
   const [refining, setRefining] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [limitPopup, setLimitPopup] = useState<{ emoji: string; title: string; body: string } | null>(null);
 
   useEffect(() => {
     getPostsCount()
@@ -36,11 +39,16 @@ export default function GeneratePage() {
 
   async function handleGenerate(e: React.SyntheticEvent) {
     e.preventDefault();
+    if (isLimitReached()) {
+      setLimitPopup(getLimitMessage());
+      return;
+    }
     setLoading(true);
     setError('');
     setResult(null);
     try {
       setResult(normalize(await generatePost({ title, notes, recentPostsLimit, documentIds: selectedDocIds.length ? selectedDocIds : undefined })));
+      incrementUsage();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -207,6 +215,17 @@ export default function GeneratePage() {
                 {refining ? <span className="spinner" /> : 'Refine'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {limitPopup && (
+        <div className="limit-modal-overlay" onClick={() => setLimitPopup(null)}>
+          <div className="limit-modal" onClick={e => e.stopPropagation()}>
+            <div className="limit-modal-emoji">{limitPopup.emoji}</div>
+            <h3 className="limit-modal-title">{limitPopup.title}</h3>
+            <p className="limit-modal-body">{limitPopup.body}</p>
+            <button className="btn-primary" onClick={() => setLimitPopup(null)}>Got it</button>
           </div>
         </div>
       )}

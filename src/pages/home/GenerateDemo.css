@@ -1,0 +1,270 @@
+/* ── Animated SVG demo (8s loop) ─────────────────────── */
+.demo-wrap {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  position: relative;
+  padding: 1.25rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(26, 29, 38, 0.8), rgba(21, 24, 34, 0.9));
+  border: 1.5px solid rgba(168, 85, 247, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(168, 85, 247, 0.15),
+    0 0 40px rgba(139, 92, 246, 0.25),
+    0 0 80px rgba(99, 102, 241, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  animation: demo-border-pulse 4s ease-in-out infinite;
+}
+.demo-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 20px;
+  padding: 2px;
+  background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899, #6366f1);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0.6;
+  animation: demo-border-shift 6s linear infinite;
+  pointer-events: none;
+}
+@keyframes demo-border-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(168, 85, 247, 0.15),
+      0 0 40px rgba(139, 92, 246, 0.25),
+      0 0 80px rgba(99, 102, 241, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(168, 85, 247, 0.3),
+      0 0 55px rgba(139, 92, 246, 0.4),
+      0 0 110px rgba(99, 102, 241, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+}
+@keyframes demo-border-shift {
+  to { background-position: 300% 0; }
+}
+.demo-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Master loop: 10s
+   0.0–2.5s : 3 brand-asset cards fly in toward the generator
+   2.5–4.0s : topic text appears in the generator
+   4.0–4.5s : Generate button pulses + ripple (click)
+   4.5–7.0s : output post card slides up, lines type out
+   7.0–9.5s : hold
+   9.5–10s  : fade out, reset
+*/
+
+/* Brand asset cards — fly in from edges toward the center (260, 115) */
+.demo-asset {
+  opacity: 0;
+  animation-duration: 10s;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.4, 0.1, 0.2, 1);
+}
+.demo-asset rect:first-child {
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35));
+}
+
+/* Generator box target: x=160-360, y=70-160. Center opening ≈ (224, 115).
+   Each asset: starts at rest, lifts, arcs into the box, shrinks to "dropped". */
+
+/* a1 - BRAND KIT: from left, drops in first (0-20%) */
+.demo-asset.a1 { animation-name: asset-drop-1; }
+@keyframes asset-drop-1 {
+  0%       { opacity: 0; transform: translate(20px, 260px) scale(1) rotate(-8deg); }
+  4%       { opacity: 1; transform: translate(20px, 260px) scale(1) rotate(-8deg); }
+  10%      { opacity: 1; transform: translate(20px, 220px) scale(0.95) rotate(-4deg); }
+  18%      { opacity: 1; transform: translate(224px, 90px) scale(0.55) rotate(0deg); }
+  21%      { opacity: 0; transform: translate(224px, 115px) scale(0.15) rotate(0deg); }
+  92%, 100%{ opacity: 0; transform: translate(20px, 260px) scale(1) rotate(-8deg); }
+}
+
+/* a2 - GUIDELINES: from bottom-left, drops in second (10-30%) */
+.demo-asset.a2 { animation-name: asset-drop-2; }
+@keyframes asset-drop-2 {
+  0%, 10%  { opacity: 0; transform: translate(160px, 320px) scale(1) rotate(4deg); }
+  14%      { opacity: 1; transform: translate(160px, 320px) scale(1) rotate(4deg); }
+  20%      { opacity: 1; transform: translate(180px, 270px) scale(0.95) rotate(2deg); }
+  28%      { opacity: 1; transform: translate(224px, 90px) scale(0.55) rotate(0deg); }
+  31%      { opacity: 0; transform: translate(224px, 115px) scale(0.15) rotate(0deg); }
+  92%, 100%{ opacity: 0; transform: translate(160px, 320px) scale(1) rotate(4deg); }
+}
+
+/* a3 - TONE: from right, drops in third (20-40%) */
+.demo-asset.a3 { animation-name: asset-drop-3; }
+@keyframes asset-drop-3 {
+  0%, 20%  { opacity: 0; transform: translate(420px, 280px) scale(1) rotate(10deg); }
+  24%      { opacity: 1; transform: translate(420px, 280px) scale(1) rotate(10deg); }
+  30%      { opacity: 1; transform: translate(400px, 230px) scale(0.95) rotate(6deg); }
+  38%      { opacity: 1; transform: translate(224px, 90px) scale(0.55) rotate(0deg); }
+  41%      { opacity: 0; transform: translate(224px, 115px) scale(0.15) rotate(0deg); }
+  92%, 100%{ opacity: 0; transform: translate(420px, 280px) scale(1) rotate(10deg); }
+}
+
+/* Generator machine: glows when assets merge in */
+.demo-machine rect:first-child {
+  animation: machine-glow 10s ease-in-out infinite;
+}
+@keyframes machine-glow {
+  0%, 15%  { stroke: #2a2f3d; }
+  18%, 42% { stroke: #8b5cf6; stroke-width: 2; }
+  45%, 92% { stroke: #2a2f3d; }
+  96%, 100%{ stroke: #2a2f3d; }
+}
+
+/* Topic text: types in after assets arrive */
+.demo-typed {
+  opacity: 0;
+  animation: topic-in 10s ease-out infinite;
+}
+@keyframes topic-in {
+  0%, 30%   { opacity: 0; }
+  34%, 92%  { opacity: 1; }
+  96%, 100% { opacity: 0; }
+}
+.demo-underline {
+  transform-origin: left center;
+  animation: underline-grow 10s ease-out infinite;
+}
+@keyframes underline-grow {
+  0%, 30%   { transform: scaleX(0); }
+  38%, 92%  { transform: scaleX(1); }
+  96%, 100% { transform: scaleX(0); }
+}
+
+/* Button glow pulse */
+.demo-btn-glow {
+  animation: btn-glow 10s ease-in-out infinite;
+}
+@keyframes btn-glow {
+  0%, 38%  { opacity: 0.3; }
+  42%, 48% { opacity: 0.95; }
+  55%, 100%{ opacity: 0.5; }
+}
+.demo-btn rect:nth-child(2) {
+  transform-origin: 260px 203px;
+  animation: btn-press 10s ease-in-out infinite;
+}
+@keyframes btn-press {
+  0%, 42%   { transform: scale(1); }
+  44%       { transform: scale(0.94); }
+  47%, 100% { transform: scale(1); }
+}
+
+/* Click ripple */
+.demo-ripple {
+  transform-origin: 260px 203px;
+  animation: ripple 10s ease-out infinite;
+}
+@keyframes ripple {
+  0%, 42%  { r: 8; opacity: 0; }
+  44%      { r: 10; opacity: 0.8; }
+  55%      { r: 55; opacity: 0; }
+  100%     { r: 55; opacity: 0; }
+}
+
+/* Output card slides up */
+.demo-card {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: card-in 10s ease-out infinite;
+}
+@keyframes card-in {
+  0%, 45%     { opacity: 0; transform: translateY(18px); }
+  52%         { opacity: 1; transform: translateY(0); }
+  92%         { opacity: 1; transform: translateY(0); }
+  96%, 100%   { opacity: 0; transform: translateY(18px); }
+}
+
+.demo-title-bar {
+  transform-origin: left center;
+  animation: title-bar-in 10s ease-out infinite;
+}
+@keyframes title-bar-in {
+  0%, 52%   { transform: scaleX(0); }
+  58%, 92%  { transform: scaleX(1); }
+  96%, 100% { transform: scaleX(0); }
+}
+
+/* Output lines "type" by expanding width */
+.demo-line {
+  animation-duration: 10s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-out;
+}
+.demo-line.l1 { animation-name: line-grow-1; }
+.demo-line.l2 { animation-name: line-grow-2; }
+.demo-line.l3 { animation-name: line-grow-3; }
+.demo-line.l4 { animation-name: line-grow-4; }
+.demo-line.l5 { animation-name: line-grow-5; }
+@keyframes line-grow-1 {
+  0%, 58%   { width: 0; }
+  64%       { width: 320px; }
+  92%       { width: 320px; }
+  96%, 100% { width: 0; }
+}
+@keyframes line-grow-2 {
+  0%, 62%   { width: 0; }
+  68%       { width: 280px; }
+  92%       { width: 280px; }
+  96%, 100% { width: 0; }
+}
+@keyframes line-grow-3 {
+  0%, 66%   { width: 0; }
+  72%       { width: 340px; }
+  92%       { width: 340px; }
+  96%, 100% { width: 0; }
+}
+@keyframes line-grow-4 {
+  0%, 70%   { width: 0; }
+  76%       { width: 300px; }
+  92%       { width: 300px; }
+  96%, 100% { width: 0; }
+}
+@keyframes line-grow-5 {
+  0%, 74%   { width: 0; }
+  80%       { width: 200px; }
+  92%       { width: 200px; }
+  96%, 100% { width: 0; }
+}
+
+/* Sparkles pop when card appears */
+.spark {
+  opacity: 0;
+  transform-origin: center;
+  animation-duration: 10s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+.spark.s1 { animation-name: spark-pop-1; }
+.spark.s2 { animation-name: spark-pop-2; }
+.spark.s3 { animation-name: spark-pop-3; }
+@keyframes spark-pop-1 {
+  0%, 50% { opacity: 0; transform: scale(0); }
+  56%     { opacity: 1; transform: scale(1.5) rotate(45deg); }
+  70%     { opacity: 0; transform: scale(0) rotate(90deg); }
+  100%    { opacity: 0; }
+}
+@keyframes spark-pop-2 {
+  0%, 53% { opacity: 0; transform: scale(0); }
+  59%     { opacity: 1; transform: scale(1.6) rotate(30deg); }
+  73%     { opacity: 0; transform: scale(0) rotate(120deg); }
+  100%    { opacity: 0; }
+}
+@keyframes spark-pop-3 {
+  0%, 56% { opacity: 0; transform: scale(0); }
+  62%     { opacity: 1; transform: scale(1.4) rotate(-30deg); }
+  76%     { opacity: 0; transform: scale(0) rotate(60deg); }
+  100%    { opacity: 0; }
+}

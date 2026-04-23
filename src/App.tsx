@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import HomePage from './pages/home/HomePage';
 import GeneratePage from './pages/GeneratePage';
 import PostsPage from './pages/PostsPage';
 import PostDetailPage from './pages/PostDetailPage';
@@ -20,6 +21,7 @@ function Sidebar() {
 
       <div className="nav-section-label">Menu</div>
       <nav className="nav-links">
+        <NavLink to="/" end>Home</NavLink>
         <NavLink to="/generate">Generate</NavLink>
         <NavLink to="/posts">Posts</NavLink>
         <NavLink to="/guidelines">Guidelines</NavLink>
@@ -39,7 +41,7 @@ export default function App() {
         <Sidebar />
         <div className="main-content">
           <Routes>
-            <Route path="/" element={<Navigate to="/generate" replace />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/generate" element={<GeneratePage />} />
             <Route path="/posts" element={<PostsPage />} />
             <Route path="/posts/:id" element={<PostDetailPage />} />
