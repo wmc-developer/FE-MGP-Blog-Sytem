@@ -17,8 +17,10 @@ export interface Guideline {
 export interface GenerateRequest {
   title: string;
   notes?: string;
+  outline?: string;
   recentPostsLimit?: number;
   documentIds?: string[];
+  specificPostIds?: string[];
 }
 
 export interface GenerateResponse {
@@ -28,6 +30,24 @@ export interface GenerateResponse {
 }
 
 export interface RefineRequest {
+  messages: ChatMessage[];
+  instruction: string;
+}
+
+export interface OutlineRequest {
+  title: string;
+  notes?: string;
+  recentPostsLimit?: number;
+  documentIds?: string[];
+  specificPostIds?: string[];
+}
+
+export interface OutlineResponse {
+  outline: string[];
+  messages: ChatMessage[];
+}
+
+export interface OutlineRefineRequest {
   messages: ChatMessage[];
   instruction: string;
 }

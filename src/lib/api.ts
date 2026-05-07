@@ -4,6 +4,9 @@ import type {
   GenerateRequest,
   GenerateResponse,
   RefineRequest,
+  OutlineRequest,
+  OutlineResponse,
+  OutlineRefineRequest,
 } from '../types';
 
 const BASE = import.meta.env.VITE_API_URL ?? '';
@@ -67,3 +70,9 @@ export const generatePost = (data: GenerateRequest) =>
   request<GenerateResponse>('/api/generate', { method: 'POST', body: JSON.stringify(data) });
 export const refinePost = (data: RefineRequest) =>
   request<GenerateResponse>('/api/generate/refine', { method: 'POST', body: JSON.stringify(data) });
+
+// Outline
+export const generateOutline = (data: OutlineRequest) =>
+  request<OutlineResponse>('/api/generate/outline', { method: 'POST', body: JSON.stringify(data) });
+export const refineOutline = (data: OutlineRefineRequest) =>
+  request<OutlineResponse>('/api/generate/outline/refine', { method: 'POST', body: JSON.stringify(data) });
