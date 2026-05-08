@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { generateOutline, refineOutline, getPostsCount, getDocuments, getPosts } from '../lib/api';
-import type { Document, Post, ChatMessage } from '../types';
+import type { Document, Post, ChatMessage, OutlinePoint } from '../types';
 import { isLimitReached, incrementUsage, getLimitMessage } from '../lib/dailyLimit';
+
+type EditTarget = { mainIdx: number; subIdx: number | null } | null;
 
 export default function OutlinePage() {
   const [title, setTitle] = useState('');
@@ -13,16 +15,17 @@ export default function OutlinePage() {
   const [pastPosts, setPastPosts] = useState<Post[]>([]);
   const [selectedPostIds, setSelectedPostIds] = useState<string[]>([]);
 
-  const [outline, setOutline] = useState<string[] | null>(null);
+  const [outline, setOutline] = useState<OutlinePoint[] | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [instruction, setInstruction] = useState('');
-  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editing, setEditing] = useState<EditTarget>(null);
   const [editingValue, setEditingValue] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [refining, setRefining] = useState(false);
   const [error, setError] = useState('');
   const [limitPopup, setLimitPopup] = useState<{ emoji: string; title: string; body: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     getPostsCount()
@@ -62,16 +65,24 @@ export default function OutlinePage() {
     }
   }
 
+  function serializeOutline(o: OutlinePoint[]): string {
+    return o
+      .map((p, i) => {
+        const subs = p.subs.map((s, j) => `   ${i + 1}.${j + 1} ${s}`).join('\n');
+        return `${i + 1}. ${p.main}${subs ? '\n' + subs : ''}`;
+      })
+      .join('\n');
+  }
+
   async function handleRefine(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!outline) return;
     setRefining(true);
     setError('');
     try {
-      // Send the user-edited bullets back so AI sees the latest state before applying the instruction
       const currentBulletsMsg: ChatMessage = {
         role: 'user',
-        content: `Current outline (after my edits):\n${outline.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
+        content: `Current outline (after my edits):\n${serializeOutline(outline)}`,
       };
       const res = await refineOutline({
         messages: [...messages, currentBulletsMsg],
@@ -87,32 +98,56 @@ export default function OutlinePage() {
     }
   }
 
-  function startEdit(idx: number) {
-    setEditingIdx(idx);
-    setEditingValue(outline?.[idx] ?? '');
+  function startEdit(mainIdx: number, subIdx: number | null) {
+    if (!outline) return;
+    setEditing({ mainIdx, subIdx });
+    setEditingValue(subIdx === null ? outline[mainIdx].main : outline[mainIdx].subs[subIdx]);
   }
   function commitEdit() {
-    if (editingIdx === null || !outline) return;
-    const next = [...outline];
-    next[editingIdx] = editingValue.trim();
-    setOutline(next.filter(p => p.length > 0));
-    setEditingIdx(null);
+    if (!editing || !outline) return;
+    const next = outline.map((p, i) => {
+      if (i !== editing.mainIdx) return p;
+      if (editing.subIdx === null) return { ...p, main: editingValue.trim() };
+      const subs = p.subs.map((s, j) => (j === editing.subIdx ? editingValue.trim() : s));
+      return { ...p, subs };
+    });
+    // Drop empty mains/subs
+    const cleaned = next
+      .filter(p => p.main.length > 0)
+      .map(p => ({ ...p, subs: p.subs.filter(s => s.length > 0) }));
+    setOutline(cleaned);
+    setEditing(null);
     setEditingValue('');
   }
-  function deletePoint(idx: number) {
-    if (!outline) return;
-    setOutline(outline.filter((_, i) => i !== idx));
-  }
-  function addPoint() {
-    setOutline([...(outline ?? []), 'New point — click to edit']);
+  function cancelEdit() {
+    setEditing(null);
+    setEditingValue('');
   }
 
-  const [copied, setCopied] = useState(false);
+  function deleteMain(mainIdx: number) {
+    if (!outline) return;
+    setOutline(outline.filter((_, i) => i !== mainIdx));
+  }
+  function deleteSub(mainIdx: number, subIdx: number) {
+    if (!outline) return;
+    setOutline(outline.map((p, i) =>
+      i === mainIdx ? { ...p, subs: p.subs.filter((_, j) => j !== subIdx) } : p
+    ));
+  }
+  function addMain() {
+    setOutline([...(outline ?? []), { main: 'New main point — click to edit', subs: [] }]);
+  }
+  function addSub(mainIdx: number) {
+    if (!outline) return;
+    setOutline(outline.map((p, i) =>
+      i === mainIdx ? { ...p, subs: [...p.subs, 'New sub-point — click to edit'] } : p
+    ));
+  }
+
   async function handleCopy() {
     if (!outline || outline.length === 0) return;
-    const text = outline.map((p, i) => `${i + 1}. ${p}`).join('\n');
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(serializeOutline(outline));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -120,13 +155,16 @@ export default function OutlinePage() {
     }
   }
 
+  const isEditing = (mainIdx: number, subIdx: number | null) =>
+    editing?.mainIdx === mainIdx && editing?.subIdx === subIdx;
+
   return (
     <div className="gen-page">
       {!outline && (
         <div className="gen-hero">
           <div className="gen-hero-badge">MGP Blogs — Outline</div>
           <h1 className="gen-hero-title">Sense-check the <span className="gen-hero-accent">angle</span> first</h1>
-          <p className="gen-hero-sub">Generate talking points, edit them, then write the full post</p>
+          <p className="gen-hero-sub">Generate a structured outline — main points with sub-point detail — then write the full post</p>
         </div>
       )}
 
@@ -154,24 +192,6 @@ export default function OutlinePage() {
             />
           </div>
 
-          {maxPosts > 0 && (
-            <div className="gen-context-row">
-              <div className="gen-context-label">
-                <span>Style reference</span>
-                <span className="gen-context-hint">
-                  {recentPostsLimit === 0
-                    ? 'No previous posts used'
-                    : `Using last ${recentPostsLimit} of ${maxPosts} posts as tone reference`}
-                </span>
-              </div>
-              <div className="gen-context-stepper">
-                <button type="button" onClick={() => setRecentPostsLimit(v => Math.max(0, v - 1))} disabled={recentPostsLimit === 0}>−</button>
-                <span className="gen-context-stepper-val">{recentPostsLimit}</span>
-                <button type="button" onClick={() => setRecentPostsLimit(v => Math.min(maxPosts, v + 1))} disabled={recentPostsLimit === maxPosts}>+</button>
-              </div>
-            </div>
-          )}
-
           {pastPosts.length > 0 && (
             <div className="gen-context-row">
               <div className="gen-context-label">
@@ -196,6 +216,24 @@ export default function OutlinePage() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {maxPosts > 0 && (
+            <div className="gen-context-row">
+              <div className="gen-context-label">
+                <span>Style reference</span>
+                <span className="gen-context-hint">
+                  {recentPostsLimit === 0
+                    ? 'No previous posts used'
+                    : `Using last ${recentPostsLimit} of ${maxPosts} posts as tone reference`}
+                </span>
+              </div>
+              <div className="gen-context-stepper">
+                <button type="button" onClick={() => setRecentPostsLimit(v => Math.max(0, v - 1))} disabled={recentPostsLimit === 0}>−</button>
+                <span className="gen-context-stepper-val">{recentPostsLimit}</span>
+                <button type="button" onClick={() => setRecentPostsLimit(v => Math.min(maxPosts, v + 1))} disabled={recentPostsLimit === maxPosts}>+</button>
               </div>
             </div>
           )}
@@ -250,33 +288,65 @@ export default function OutlinePage() {
           </div>
 
           <ol className="outline-list">
-            {outline.map((point, idx) => (
-              <li key={idx} className="outline-item">
-                <span className="outline-num">{idx + 1}</span>
-                {editingIdx === idx ? (
-                  <textarea
-                    className="outline-edit"
-                    value={editingValue}
-                    onChange={e => setEditingValue(e.target.value)}
-                    onBlur={commitEdit}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(); }
-                      if (e.key === 'Escape') { setEditingIdx(null); setEditingValue(''); }
-                    }}
-                    autoFocus
-                    rows={2}
-                  />
-                ) : (
-                  <button className="outline-text" onClick={() => startEdit(idx)} title="Click to edit">
-                    {point}
-                  </button>
-                )}
-                <button className="outline-delete" onClick={() => deletePoint(idx)} title="Remove point">×</button>
+            {outline.map((point, mIdx) => (
+              <li key={mIdx} className="outline-main">
+                <div className="outline-item">
+                  <span className="outline-num">{mIdx + 1}</span>
+                  {isEditing(mIdx, null) ? (
+                    <textarea
+                      className="outline-edit"
+                      value={editingValue}
+                      onChange={e => setEditingValue(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(); }
+                        if (e.key === 'Escape') cancelEdit();
+                      }}
+                      autoFocus
+                      rows={2}
+                    />
+                  ) : (
+                    <button className="outline-text outline-text-main" onClick={() => startEdit(mIdx, null)} title="Click to edit">
+                      {point.main}
+                    </button>
+                  )}
+                  <button className="outline-delete" onClick={() => deleteMain(mIdx)} title="Remove main point">×</button>
+                </div>
+
+                <ul className="outline-subs">
+                  {point.subs.map((sub, sIdx) => (
+                    <li key={sIdx} className="outline-item outline-sub">
+                      <span className="outline-sub-marker">{mIdx + 1}.{sIdx + 1}</span>
+                      {isEditing(mIdx, sIdx) ? (
+                        <textarea
+                          className="outline-edit"
+                          value={editingValue}
+                          onChange={e => setEditingValue(e.target.value)}
+                          onBlur={commitEdit}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(); }
+                            if (e.key === 'Escape') cancelEdit();
+                          }}
+                          autoFocus
+                          rows={2}
+                        />
+                      ) : (
+                        <button className="outline-text" onClick={() => startEdit(mIdx, sIdx)} title="Click to edit">
+                          {sub}
+                        </button>
+                      )}
+                      <button className="outline-delete" onClick={() => deleteSub(mIdx, sIdx)} title="Remove sub-point">×</button>
+                    </li>
+                  ))}
+                  <li>
+                    <button type="button" className="outline-add outline-add-sub" onClick={() => addSub(mIdx)}>+ Add sub-point</button>
+                  </li>
+                </ul>
               </li>
             ))}
           </ol>
 
-          <button type="button" className="outline-add" onClick={addPoint}>+ Add point</button>
+          <button type="button" className="outline-add" onClick={addMain}>+ Add main point</button>
 
           <div className="gen-refine-bar">
             <form onSubmit={handleRefine} className="gen-refine-form">
@@ -285,7 +355,7 @@ export default function OutlinePage() {
                 className="gen-refine-input"
                 value={instruction}
                 onChange={e => setInstruction(e.target.value)}
-                placeholder="Refine outline… e.g. add a point about preparation timing, drop point 3, sharpen the contrast"
+                placeholder="Refine outline… e.g. add a sub-point under 2 about timing, drop point 3, sharpen the contrast"
                 required
               />
               <button type="submit" className="gen-refine-btn" disabled={refining}>

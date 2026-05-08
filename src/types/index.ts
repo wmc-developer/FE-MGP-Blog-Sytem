@@ -42,8 +42,13 @@ export interface OutlineRequest {
   specificPostIds?: string[];
 }
 
+export interface OutlinePoint {
+  main: string;
+  subs: string[];
+}
+
 export interface OutlineResponse {
-  outline: string[];
+  outline: OutlinePoint[];
   messages: ChatMessage[];
 }
 

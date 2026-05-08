@@ -1100,3 +1100,34 @@ button:disabled, .btn:disabled { opacity: 0.45; cursor: not-allowed; }
   margin-bottom: 1rem;
 }
 .outline-add:hover { border-color: var(--accent, #6366f1); color: var(--accent, #6366f1); }
+
+/* Outline — main + sub-point structure */
+.outline-main {
+  margin-bottom: 1rem;
+}
+.outline-text-main { font-weight: 600; }
+.outline-subs {
+  list-style: none;
+  padding: 0 0 0 2.5rem;
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.outline-sub {
+  background: var(--surface-soft, #fafafa);
+  padding: 0.5rem 0.85rem;
+}
+.outline-sub-marker {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+  width: 2rem;
+  padding-top: 0.2rem;
+}
+.outline-add-sub {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.85rem;
+}
