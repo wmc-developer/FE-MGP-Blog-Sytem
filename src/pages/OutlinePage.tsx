@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { generateOutline, refineOutline, getPostsCount, getDocuments, getPosts } from '../lib/api';
 import type { Document, Post, ChatMessage, OutlinePoint } from '../types';
 import { isLimitReached, incrementUsage, getLimitMessage } from '../lib/dailyLimit';
@@ -6,7 +7,8 @@ import { isLimitReached, incrementUsage, getLimitMessage } from '../lib/dailyLim
 type EditTarget = { mainIdx: number; subIdx: number | null } | null;
 
 export default function OutlinePage() {
-  const [title, setTitle] = useState('');
+  const [searchParams] = useSearchParams();
+  const [title, setTitle] = useState(searchParams.get('title') ?? '');
   const [notes, setNotes] = useState('');
   const [recentPostsLimit, setRecentPostsLimit] = useState(3);
   const [maxPosts, setMaxPosts] = useState(0);

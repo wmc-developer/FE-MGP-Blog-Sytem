@@ -69,3 +69,20 @@ export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
+
+export interface TopicSuggestion {
+  title: string;
+  why: string;
+  isHot: boolean;
+  newsSource: string;
+}
+
+export interface NewsHeadline {
+  source: string;
+  title: string;
+}
+
+export interface TopicsResponse {
+  topics: TopicSuggestion[];
+  newsHeadlines: NewsHeadline[];
+}

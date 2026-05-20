@@ -71,6 +71,10 @@ export const generatePost = (data: GenerateRequest) =>
 export const refinePost = (data: RefineRequest) =>
   request<GenerateResponse>('/api/generate/refine', { method: 'POST', body: JSON.stringify(data) });
 
+// Topics
+export const generateTopics = (data?: { recentPostsLimit?: number }) =>
+  request<import('../types').TopicsResponse>('/api/generate/topics', { method: 'POST', body: JSON.stringify(data ?? {}) });
+
 // Outline
 export const generateOutline = (data: OutlineRequest) =>
   request<OutlineResponse>('/api/generate/outline', { method: 'POST', body: JSON.stringify(data) });
