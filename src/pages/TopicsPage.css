@@ -169,6 +169,25 @@
   width: fit-content;
 }
 
+.topic-card-headline {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  font-style: italic;
+  border-left: 2px solid rgba(251, 146, 60, 0.5);
+  padding-left: 0.6rem;
+  margin: 0;
+}
+
+.topic-card-headline a {
+  color: #fb923c;
+  text-decoration: none;
+}
+
+.topic-card-headline a:hover {
+  text-decoration: underline;
+}
+
 .topic-card-title {
   font-size: 1rem;
   font-weight: 700;

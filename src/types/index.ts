@@ -75,6 +75,8 @@ export interface TopicSuggestion {
   why: string;
   isHot: boolean;
   newsSource: string;
+  newsHeadline?: string;
+  newsUrl?: string;
 }
 
 export interface NewsHeadline {

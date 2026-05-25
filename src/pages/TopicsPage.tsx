@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { generateTopics } from '../lib/api';
-import type { TopicSuggestion, NewsHeadline } from '../types';
+import type { TopicSuggestion } from '../types';
 import './TopicsPage.css';
 
 export default function TopicsPage() {
   const navigate = useNavigate();
   const [topics, setTopics] = useState<TopicSuggestion[]>([]);
-  const [headlines, setHeadlines] = useState<NewsHeadline[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fetched, setFetched] = useState(false);
@@ -18,7 +17,6 @@ export default function TopicsPage() {
     try {
       const res = await generateTopics();
       setTopics(res.topics);
-      setHeadlines(res.newsHeadlines);
       setFetched(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -31,9 +29,8 @@ export default function TopicsPage() {
     navigate(`/outline?title=${encodeURIComponent(title)}`);
   }
 
-const hotTopics = topics.filter((t) => t.isHot);
+  const hotTopics = topics.filter((t) => t.isHot);
   const regularTopics = topics.filter((t) => !t.isHot);
-  const sourcesUsed = [...new Set(headlines.map((h) => h.source))];
 
   return (
     <div className="topics-page">
@@ -66,11 +63,6 @@ const hotTopics = topics.filter((t) => t.isHot);
           )}
         </button>
 
-        {sourcesUsed.length > 0 && (
-          <p className="topics-sources-line">
-            Live news from: {sourcesUsed.join(' · ')}
-          </p>
-        )}
       </div>
 
       {error && <div className="topics-error">{error}</div>}
@@ -103,19 +95,6 @@ const hotTopics = topics.filter((t) => t.isHot);
             </section>
           )}
 
-          {headlines.length > 0 && (
-            <details className="topics-news-drawer">
-              <summary>View {headlines.length} news headlines used</summary>
-              <ul className="topics-news-list">
-                {headlines.map((h, i) => (
-                  <li key={i}>
-                    <span className="topics-news-source">{h.source}</span>
-                    {h.title}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
         </div>
       )}
     </div>
@@ -146,6 +125,17 @@ function TopicCard({
       {topic.isHot && (
         <div className="topic-hot-badge">
           🔥 Hot — {topic.newsSource}
+        </div>
+      )}
+      {topic.isHot && topic.newsHeadline && (
+        <div className="topic-card-headline">
+          {topic.newsUrl ? (
+            <a href={topic.newsUrl} target="_blank" rel="noopener noreferrer">
+              {topic.newsHeadline}
+            </a>
+          ) : (
+            topic.newsHeadline
+          )}
         </div>
       )}
       <h3 className="topic-card-title">{topic.title}</h3>
