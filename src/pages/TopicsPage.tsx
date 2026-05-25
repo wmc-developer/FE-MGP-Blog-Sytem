@@ -31,11 +31,7 @@ export default function TopicsPage() {
     navigate(`/outline?title=${encodeURIComponent(title)}`);
   }
 
-  function useTopicForGenerate(title: string) {
-    navigate(`/generate?title=${encodeURIComponent(title)}`);
-  }
-
-  const hotTopics = topics.filter((t) => t.isHot);
+const hotTopics = topics.filter((t) => t.isHot);
   const regularTopics = topics.filter((t) => !t.isHot);
   const sourcesUsed = [...new Set(headlines.map((h) => h.source))];
 
@@ -88,7 +84,7 @@ export default function TopicsPage() {
               </div>
               <div className="topics-grid">
                 {hotTopics.map((t, i) => (
-                  <TopicCard key={i} topic={t} onOutline={useTopicForOutline} onGenerate={useTopicForGenerate} />
+                  <TopicCard key={i} topic={t} onOutline={useTopicForOutline} />
                 ))}
               </div>
             </section>
@@ -101,7 +97,7 @@ export default function TopicsPage() {
               </div>
               <div className="topics-grid">
                 {regularTopics.map((t, i) => (
-                  <TopicCard key={i} topic={t} onOutline={useTopicForOutline} onGenerate={useTopicForGenerate} />
+                  <TopicCard key={i} topic={t} onOutline={useTopicForOutline} />
                 ))}
               </div>
             </section>
@@ -129,12 +125,22 @@ export default function TopicsPage() {
 function TopicCard({
   topic,
   onOutline,
-  onGenerate,
 }: {
   topic: TopicSuggestion;
   onOutline: (title: string) => void;
-  onGenerate: (title: string) => void;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(topic.title);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  }
+
   return (
     <div className={`topic-card ${topic.isHot ? 'topic-card--hot' : ''}`}>
       {topic.isHot && (
@@ -148,8 +154,23 @@ function TopicCard({
         <button className="topic-btn topic-btn--outline" onClick={() => onOutline(topic.title)}>
           Start outline
         </button>
-        <button className="topic-btn topic-btn--generate" onClick={() => onGenerate(topic.title)}>
-          Generate post
+        <button className="topic-btn topic-btn--generate" onClick={handleCopy}>
+          {copied ? (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Copied
+            </>
+          ) : (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </>
+          )}
         </button>
       </div>
     </div>
