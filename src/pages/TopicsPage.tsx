@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
 import { generateTopics } from '../lib/api';
 import type { TopicSuggestion } from '../types';
 import './TopicsPage.css';
@@ -27,6 +28,84 @@ export default function TopicsPage() {
 
   function useTopicForOutline(title: string) {
     navigate(`/outline?title=${encodeURIComponent(title)}`);
+  }
+
+  function handleDownloadPdf() {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 48;
+    const contentWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    function ensureSpace(needed: number) {
+      if (y + needed > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
+      }
+    }
+
+    function addWrapped(
+      text: string,
+      fontSize: number,
+      fontStyle: 'normal' | 'bold' | 'italic',
+      color: [number, number, number],
+      lineGap = 4,
+    ) {
+      doc.setFont('helvetica', fontStyle);
+      doc.setFontSize(fontSize);
+      doc.setTextColor(color[0], color[1], color[2]);
+      const lines = doc.splitTextToSize(text, contentWidth);
+      const lineHeight = fontSize * 1.25;
+      for (const line of lines) {
+        ensureSpace(lineHeight);
+        doc.text(line, margin, y);
+        y += lineHeight;
+      }
+      y += lineGap;
+    }
+
+    // Title
+    addWrapped('MGP Blog — Topic Ideas', 22, 'bold', [17, 24, 39], 2);
+    addWrapped(
+      `Generated ${new Date().toLocaleString()}`,
+      10,
+      'normal',
+      [107, 114, 128],
+      12,
+    );
+
+    const sections: { label: string; items: TopicSuggestion[] }[] = [
+      { label: 'Hot right now — based on this week’s news', items: hotTopics },
+      { label: 'Content gaps — topics not yet covered', items: regularTopics },
+    ];
+
+    for (const section of sections) {
+      if (section.items.length === 0) continue;
+      ensureSpace(30);
+      addWrapped(section.label, 13, 'bold', [37, 99, 235], 6);
+
+      section.items.forEach((t, i) => {
+        ensureSpace(40);
+        addWrapped(`${i + 1}. ${t.title}`, 13, 'bold', [17, 24, 39], 2);
+        addWrapped(t.why, 11, 'normal', [55, 65, 81], 4);
+        if (t.isHot) {
+          if (t.newsSource) {
+            addWrapped(`Source: ${t.newsSource}`, 9, 'italic', [107, 114, 128], 1);
+          }
+          if (t.newsHeadline) {
+            addWrapped(`Headline: ${t.newsHeadline}`, 9, 'italic', [107, 114, 128], 1);
+          }
+          if (t.newsUrl) {
+            addWrapped(t.newsUrl, 9, 'normal', [37, 99, 235], 1);
+          }
+        }
+        y += 8;
+      });
+    }
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    doc.save(`mgp-topic-ideas-${stamp}.pdf`);
   }
 
   const hotTopics = topics.filter((t) => t.isHot);
@@ -69,6 +148,20 @@ export default function TopicsPage() {
 
       {topics.length > 0 && (
         <div className="topics-results">
+          <div className="topics-download-bar">
+            <span className="topics-download-label">
+              {topics.length} topic{topics.length === 1 ? '' : 's'} ready — export the full list &amp; data
+            </span>
+            <button className="topics-download-btn" onClick={handleDownloadPdf}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download PDF
+            </button>
+          </div>
+
           {hotTopics.length > 0 && (
             <section className="topics-section">
               <div className="topics-section-label hot">
